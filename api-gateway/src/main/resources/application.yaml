@@ -1,0 +1,47 @@
+
+server:
+  port: 8060
+
+eureka:
+  instance:
+    hostname: localhost
+
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: "optional:configserver:http://localhost:8088"
+  cloud:
+    gateway:
+      routes:
+        - id: security-service
+          uri: lb://security-service
+          predicates:
+            - Path=/auth/**
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**
+          filters:
+            - AuthenticationFilter
+
+        - id: activity-service
+          uri: lb://activity-service
+          predicates:
+            - Path=/activities/**
+          filters:
+            - AuthenticationFilter
+
+
