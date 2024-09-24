@@ -53,15 +53,16 @@ public class ServiceClassTest {
     }
 
     @Test
-    public void fetchUserById_Success(){
-        User user1=new User(1,"Naveen","ganji","ganjinaveen@gmail.com");
-        when(userRepository.findById(1)).thenReturn(Optional.of(user1));
+    public void getUserById_Success() {
+        User user = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
 
-        Optional<User> userResult=userRepository.findById(1);
+        User result = userServiceClass.getUserById(1); // Call the method under test
 
-        assertNotNull(userResult);
-        assertEquals(user1,userResult.get());
+        assertNotNull(result);
+        assertEquals(user, result); // Verify that the returned user matches the expected user
     }
+
     @Test
     public void fetchUserById_NotFound() {
         when(userRepository.findById(1)).thenReturn(Optional.empty());
@@ -216,7 +217,6 @@ public class ServiceClassTest {
 
         assertEquals("RestTemplate Error", exception.getMessage());
     }
-
 
     @Test
     public void getAllUsers_Success() {
