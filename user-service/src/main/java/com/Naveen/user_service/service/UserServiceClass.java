@@ -85,7 +85,7 @@ public class UserServiceClass implements UserService{
     }
 
     @Override
-    public String deleteUserActivities(int userId,int activityId) {
+    public String deleteUserActivities(int userId, int activityId) {
         User user=userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("user with id : "+userId+ " not found"));
         ResponseEntity<String> response=restTemplate.exchange(Constant.URL+"/"+activityId,HttpMethod.DELETE,null, String.class);
         return response.getBody();

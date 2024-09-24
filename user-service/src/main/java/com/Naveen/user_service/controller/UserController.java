@@ -61,13 +61,14 @@ public class UserController {
         return userService.getUserActivity(userId,activityId);
     }
 
-    @DeleteMapping(Constant.USER_ID_ACTIVITIES_ACTIVITY_ID)
-    public String deleteUserActivity(@PathVariable("userId") int userId,@PathVariable("activityId") int activityId){
-        return userService.deleteUserActivities(userId,activityId);
-    }
+
 
     @PutMapping(Constant.USER_ID_ACTIVITIES_ACTIVITY_ID)
     public Activity updateUserActivity(@PathVariable("userId") int userId,@PathVariable("activityId") int activityId,@RequestBody Activity activity){
         return userService.updateUserActivity(userId,activityId,activity);
+    }
+    @DeleteMapping(Constant.USER_ID_ACTIVITIES_ACTIVITY_ID)
+    public String deleteUserActivities(@PathVariable("userId") int userId,@PathVariable("activityId") int activityId){
+        return  userService.deleteUserActivities(userId,activityId);
     }
 }

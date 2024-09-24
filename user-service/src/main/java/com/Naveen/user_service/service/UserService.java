@@ -20,7 +20,7 @@ public interface UserService {
 
     public Activity saveUserActivity(Activity activity,int userId);
 
-    public  String deleteUserActivities(int userId,int ActivityId);
+    public String deleteUserActivities(int userId, int ActivityId);
 
     public  Activity updateUserActivity(int userId,int ActivityId,Activity activity);
 
