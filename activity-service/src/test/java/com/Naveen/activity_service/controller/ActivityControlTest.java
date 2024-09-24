@@ -4,28 +4,29 @@ package com.Naveen.activity_service.controller;
 import com.Naveen.activity_service.entity.Activity;
 import com.Naveen.activity_service.service.ActivityService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+
 public class ActivityControlTest {
     @InjectMocks
     private ActivityControl activityControl;
 
     @Mock
     private ActivityService activityService;
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void findAllActivity_Success() {
         Activity activity1 = new Activity(1, "Activity 1", "1", 1);
@@ -99,6 +100,6 @@ public class ActivityControlTest {
         doNothing().when(activityService).deleteActivityByUserId(userId);
 
         String response = activityControl.deleteActivityByUserId(userId);
-        assertEquals("Activities with userId : 1 Deleted", response);
+        assertEquals("Deleted Activities with userId : 1", response);
     }
 }

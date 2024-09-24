@@ -5,11 +5,11 @@ import com.Naveen.user_service.entity.Activity;
 import com.Naveen.user_service.entity.User;
 import com.Naveen.user_service.exception.UserNotFoundException;
 import com.Naveen.user_service.repository.UserRepository;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +20,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+
 public class ServiceClassTest {
     @InjectMocks
     private UserServiceClass userServiceClass;
@@ -34,6 +35,11 @@ public class ServiceClassTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void fetchAllUsers(){

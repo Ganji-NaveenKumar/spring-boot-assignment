@@ -4,11 +4,11 @@ package com.Naveen.activity_service.service;
 import com.Naveen.activity_service.entity.Activity;
 import com.Naveen.activity_service.exception.ActivityNotFoundException;
 import com.Naveen.activity_service.repository.ActivityRepository;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +17,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class ActivityServiceClassTest {
 
     @InjectMocks
@@ -25,6 +24,11 @@ public class ActivityServiceClassTest {
 
     @Mock
     private ActivityRepository activityRepository;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void findAllActivity_Success() {

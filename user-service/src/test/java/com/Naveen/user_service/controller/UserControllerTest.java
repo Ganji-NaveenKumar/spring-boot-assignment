@@ -4,11 +4,11 @@ package com.Naveen.user_service.controller;
 import com.Naveen.user_service.entity.Activity;
 import com.Naveen.user_service.entity.User;
 import com.Naveen.user_service.service.UserService;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,8 +16,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
-
-@RunWith(MockitoJUnitRunner.class)
 public class UserControllerTest {
 
     @Mock
@@ -26,6 +24,10 @@ public class UserControllerTest {
     @InjectMocks
     private  UserController userController;
 
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
     @Test
     public void fetchAllUsers(){
         User user1=new User(1,"Naveen","Ganji","naveenganji@gmail.com");
