@@ -32,12 +32,12 @@
 		<sonar.organization>ganji-naveenkumar-1</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.projectKey>ganji-naveenkumar-1_spring-boot-assignment-user-service</sonar.projectKey>
-		<sonar.exclusions>**/com/Naveen/user-service/entity/**,
-			**/com/Naveen/user-service/exception/**,
-			**/com/Naveen/user-service/repository/**,
-			**/com/Naveen/user-service/utils/**,
-			**/com/Naveen/user-service/config/**,
-			**/com/Naveen/user-service/UserServiceApplication.java
+		<sonar.exclusions>**/com/Naveen/user_service/entity/**,
+			**/com/Naveen/user_service/exception/**,
+			**/com/Naveen/user_service/repository/**,
+			**/com/Naveen/user_service/utils/**,
+			**/com/Naveen/user_service/config/**,
+			**/com/Naveen/user_service/UserServiceApplication.java
 		</sonar.exclusions>
 	</properties>
 	<dependencies>
