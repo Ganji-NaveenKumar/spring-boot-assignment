@@ -42,14 +42,18 @@ public class ServiceClassTest {
     }
 
     @Test
-    public void fetchAllUsers(){
-        User user1=new User(1,"Naveen","ganji","ganjinaveen@gmail.com");
-        User user2=new User(2,"Swarupa","ganji","ganjiswarupa@gmail.com");
-        List<User> userList= Arrays.asList(user1,user2);
+    public void getAllUsers_Success() {
+        User user1 = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User user2 = new User(2, "Swarupa", "Ganji", "ganjiswarupa@gmail.com");
+        List<User> userList = Arrays.asList(user1, user2);
 
         when(userRepository.findAll()).thenReturn(userList);
-        List<User> result=userRepository.findAll();
-        assertEquals(userList,result);
+
+        List<User> result = userServiceClass.getAllUsers();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(userList, result);
     }
 
     @Test
@@ -105,16 +109,6 @@ public class ServiceClassTest {
         assertEquals("User with id ; 1 not found", exception.getMessage());
     }
 
-    @Test
-    public void updateUser_Success() {
-        User existingUser = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
-        User updatedInfo = new User(1, "Naveen", "UpdatedLastName", "ganjinaveen@gmail.com");
-        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
-
-        User updatedUser = userServiceClass.updateUser(1, updatedInfo);
-        assertNotNull(updatedUser);
-        assertEquals("UpdatedLastName", updatedUser.getLastName());
-    }
 
     @Test
     public void updateUser_NotFound() {
@@ -128,18 +122,22 @@ public class ServiceClassTest {
     }
 
     @Test
-    public void getUserActivities_Success() {
+    public void deleteUserActivities_Success() {
+        // Arrange: Create a user and set up repository behavior
         User user = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
-        List<Activity> activities = Arrays.asList(new Activity(1, "Activity1", "2", 1));
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
-                eq(new ParameterizedTypeReference<List<Activity>>() {})))
-                .thenReturn(ResponseEntity.ok(activities));
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.DELETE), isNull(), eq(String.class)))
+                .thenReturn(ResponseEntity.ok("Deleted"));
 
-        List<Activity> response = userServiceClass.getUserActivities(1);
-        assertNotNull(response);
-        assertEquals(1, response.size());
+        // Act: Call the method under test
+        String response = userServiceClass.deleteUserActivities(1, 1);
+        // Assert: Check that the response is as expected
+        assertEquals("Deleted", response);
+
+        // Optional: Verify that the repository's delete method was called (if applicable)
+        // verify(userRepository).deleteById(1);
     }
+
 
     @Test
     public void getUserActivities_NotFound() {
@@ -217,24 +215,6 @@ public class ServiceClassTest {
 
         assertEquals("RestTemplate Error", exception.getMessage());
     }
-
-    @Test
-    public void getAllUsers_Success() {
-        User user1 = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
-        User user2 = new User(2, "Swarupa", "Ganji", "ganjiswarupa@gmail.com");
-        List<User> userList = Arrays.asList(user1, user2);
-
-        // Mock the behavior of userRepository to return the userList
-        when(userRepository.findAll()).thenReturn(userList);
-
-        // Call the method under test
-        List<User> result = userServiceClass.getAllUsers();
-
-        // Verify the results
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(userList, result);
-    }
     @Test
     public void saveUser_MissingFields() {
         User user = new User(0, null, null, null); // Invalid user
@@ -283,16 +263,6 @@ public class ServiceClassTest {
         assertEquals("user with id : 1 not found", exception.getMessage());
     }
 
-    @Test
-    public void deleteUserActivities_Success() {
-        User user = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.DELETE), isNull(), eq(String.class)))
-                .thenReturn(ResponseEntity.ok("Deleted"));
-
-        String response = userServiceClass.deleteUserActivities(1, 1);
-        assertEquals("Deleted", response);
-    }
 
     @Test
     public void deleteUserActivities_UserNotFound() {
@@ -303,6 +273,19 @@ public class ServiceClassTest {
         });
 
         assertEquals("user with id : 1 not found", exception.getMessage());
+    }
+    @Test
+    public void getUserActivities_Success() {
+        User user = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        List<Activity> activities = Arrays.asList(new Activity(1, "Activity1", "2", 1));
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                eq(new ParameterizedTypeReference<List<Activity>>() {})))
+                .thenReturn(ResponseEntity.ok(activities));
+
+        List<Activity> response = userServiceClass.getUserActivities(1);
+        assertNotNull(response);
+        assertEquals(1, response.size());
     }
 
     @Test
@@ -352,5 +335,69 @@ public class ServiceClassTest {
         });
 
         assertEquals("user with id : 1 not found", exception.getMessage());
+    }
+
+    @Test
+    public void updateUser_Success() {
+        User existingUser = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User updatedInfo = new User(1, "Naveen", "UpdatedLastName", "ganjinaveen@gmail.com");
+        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedInfo);
+
+        User updatedUser = userServiceClass.updateUser(1, updatedInfo);
+        assertNotNull(updatedUser);
+        assertEquals("UpdatedLastName", updatedUser.getLastName());
+    }
+
+    @Test
+    public void updateUser_EmailOnly() {
+        User existingUser = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User updatedInfo = new User(1, null, null, "newemail@gmail.com"); // Only email provided
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User updatedUser = userServiceClass.updateUser(1, updatedInfo);
+
+        assertNotNull(updatedUser);
+        assertEquals("newemail@gmail.com", updatedUser.getEmail()); // Email should be updated
+        assertEquals("Naveen", updatedUser.getFirstName()); // First name should remain unchanged
+    }
+
+        @Test
+    public void updateUser_FirstNameOnly() {
+        User existingUser = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User updatedInfo = new User(1, "UpdatedName", null, null);
+        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
+
+        User updatedUser = userServiceClass.updateUser(1, updatedInfo);
+        assertNotNull(updatedUser);
+        assertEquals("UpdatedName", updatedUser.getFirstName());
+        assertEquals("Ganji", updatedUser.getLastName()); // Last name should remain unchanged
+    }
+
+    @Test
+    public void updateUser_LastNameOnly() {
+        User existingUser = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User updatedInfo = new User(1, null, "UpdatedLastName", null);
+        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
+
+        User updatedUser = userServiceClass.updateUser(1, updatedInfo);
+        assertNotNull(updatedUser);
+        assertEquals("UpdatedLastName", updatedUser.getLastName());
+        assertEquals("ganjinaveen@gmail.com", updatedUser.getEmail()); // Email should remain unchanged
+    }
+
+    @Test
+    public void updateUser_NothingToUpdate() {
+        User existingUser = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User updatedInfo = new User(1, null, null, null); // No fields to update
+        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
+
+        User updatedUser = userServiceClass.updateUser(1, updatedInfo);
+        assertNotNull(updatedUser);
+        assertEquals("Naveen", updatedUser.getFirstName());
+        assertEquals("Ganji", updatedUser.getLastName());
+        assertEquals("ganjinaveen@gmail.com", updatedUser.getEmail());
     }
 }
