@@ -3,6 +3,7 @@ package com.Naveen.user_service.controller;
 
 import com.Naveen.user_service.entity.Activity;
 import com.Naveen.user_service.entity.User;
+import com.Naveen.user_service.exception.UserNotFoundException;
 import com.Naveen.user_service.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.InjectMocks;
@@ -11,10 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 public class UserControllerTest {
 
@@ -158,5 +161,88 @@ public class UserControllerTest {
         assertNotNull(response);
         assertEquals(activity, response);
     }
+
+    @Test
+    public void saveUser_InvalidInput() {
+        User invalidUser = new User(0, "John", "Doe", "john@example.com");
+        doThrow(new IllegalArgumentException("Invalid user data")).when(userService).saveUser(invalidUser);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            userController.saveUser(invalidUser);
+        });
+        assertEquals("Invalid user data", exception.getMessage());
+    }
+
+    @Test
+    public void updateUser_InvalidId() {
+        User user = new User(999, "NonExistentUser", "LastName", "nonexistent@example.com");
+        when(userService.saveUser(user)).thenReturn(null); // simulate user not found
+
+        User response = userController.updateUser(user);
+        assertNull(response);
+    }
+
+    @Test
+    public void deleteUser_NonExistentId() {
+        int nonExistentUserId = 999;
+        UserNotFoundException exception;
+        doThrow(new UserNotFoundException("User not found")).when(userService).deleteUser(nonExistentUserId);
+        exception = assertThrows(UserNotFoundException.class, () -> {
+            userController.deleteUser(nonExistentUserId);
+        });
+        assertEquals("User not found", exception.getMessage());
+    }
+
+    @Test
+    public void getUserActivities_NoActivities() {
+        int userId = 1;
+        when(userService.getUserActivities(userId)).thenReturn(Collections.emptyList());
+
+        List<Activity> response = userController.getUserActivities(userId);
+        assertNotNull(response);
+        assertTrue(response.isEmpty());
+    }
+
+    @Test
+    public void getUserActivity_NonExistentActivity() {
+        int userId = 1;
+        int nonExistentActivityId = 999;
+        when(userService.getUserActivity(userId, nonExistentActivityId)).thenReturn(null);
+
+        Activity response = userController.getUserActivity(userId, nonExistentActivityId);
+        assertNull(response);
+    }
+
+    @Test
+    public void saveUserActivity_InvalidData() {
+        Activity invalidActivity = new Activity(0, "", "", 1); // invalid data
+        doThrow(new IllegalArgumentException("Invalid activity data")).when(userService).saveUserActivity(invalidActivity, 1);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            userController.saveUserActivity(1, invalidActivity);
+        });
+        assertEquals("Invalid activity data", exception.getMessage());
+    }
+
+
+    @Test
+    public void updateUserActivity_NonExistentActivity() {
+        Activity activity = new Activity(999, "NonExistentActivity", "2.00", 1);
+        when(userService.updateUserActivity(1, 999, activity)).thenThrow(new UserNotFoundException("Activity not found"));
+
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            userController.updateUserActivity(1, 999, activity);
+        });
+        assertEquals("Activity not found", exception.getMessage());
+    }
+
+    @Test
+    public void deleteUserActivity_NonExistent() {
+        when(userService.deleteUserActivities(1, 999)).thenThrow(new UserNotFoundException("Activity not found"));
+
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            userController.deleteUserActivity(1, 999);
+        });
+        assertEquals("Activity not found", exception.getMessage());
+    }
+
 
 }

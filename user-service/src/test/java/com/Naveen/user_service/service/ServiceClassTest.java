@@ -5,6 +5,7 @@ import com.Naveen.user_service.entity.Activity;
 import com.Naveen.user_service.entity.User;
 import com.Naveen.user_service.exception.UserNotFoundException;
 import com.Naveen.user_service.repository.UserRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -22,8 +23,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 public class ServiceClassTest {
@@ -146,6 +146,113 @@ public class ServiceClassTest {
 
         Exception exception = assertThrows(UserNotFoundException.class, () -> {
             userServiceClass.getUserActivities(1);
+        });
+
+        assertEquals("user with id : 1 not found", exception.getMessage());
+    }
+
+    @Test
+    public void saveUser_InvalidInput() {
+        User invalidUser = null; // Or create a user with invalid fields
+        doThrow(new IllegalArgumentException("Invalid user data")).when(userRepository).save(invalidUser);
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            userServiceClass.saveUser(invalidUser);
+        });
+
+        assertEquals("Invalid user data", exception.getMessage());
+    }
+    @Test
+    public void deleteUser_NonExistentId() {
+        int nonExistentUserId = 999;
+        doThrow(new UserNotFoundException("User with id ; " + nonExistentUserId + " not found"))
+                .when(userRepository).findById(nonExistentUserId);
+
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            userServiceClass.deleteUser(nonExistentUserId);
+        });
+
+        assertEquals("User with id ; 999 not found", exception.getMessage());
+    }
+    @Test
+    public void saveUserActivity_InvalidData() {
+        Activity invalidActivity = new Activity(0, "", "", 1); // Invalid data
+        when(userRepository.findById(1)).thenReturn(Optional.of(new User()));
+
+        doThrow(new IllegalArgumentException("Invalid activity data"))
+                .when(restTemplate).postForEntity(anyString(), any(), eq(Activity.class));
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            userServiceClass.saveUserActivity(invalidActivity, 1);
+        });
+
+        assertEquals("Invalid activity data", exception.getMessage());
+    }
+    @Test
+    public void getUserActivities_RestTemplateException() {
+        User user = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                eq(new ParameterizedTypeReference<List<Activity>>() {})))
+                .thenThrow(new RuntimeException("RestTemplate Error"));
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            userServiceClass.getUserActivities(1);
+        });
+
+        assertEquals("RestTemplate Error", exception.getMessage());
+    }
+    @Test
+    public void updateUserActivity_RestTemplateException() {
+        User user = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        Activity activity = new Activity(1, "Updated Activity", "2", 1);
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(), eq(Activity.class)))
+                .thenThrow(new RuntimeException("RestTemplate Error"));
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            userServiceClass.updateUserActivity(1, 1, activity);
+        });
+
+        assertEquals("RestTemplate Error", exception.getMessage());
+    }
+
+
+    @Test
+    public void getAllUsers_Success() {
+        User user1 = new User(1, "Naveen", "Ganji", "ganjinaveen@gmail.com");
+        User user2 = new User(2, "Swarupa", "Ganji", "ganjiswarupa@gmail.com");
+        List<User> userList = Arrays.asList(user1, user2);
+
+        // Mock the behavior of userRepository to return the userList
+        when(userRepository.findAll()).thenReturn(userList);
+
+        // Call the method under test
+        List<User> result = userServiceClass.getAllUsers();
+
+        // Verify the results
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(userList, result);
+    }
+    @Test
+    public void saveUser_MissingFields() {
+        User user = new User(0, null, null, null); // Invalid user
+        doThrow(new IllegalArgumentException("User fields cannot be null")).when(userRepository).save(user);
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            userServiceClass.saveUser(user);
+        });
+
+        assertEquals("User fields cannot be null", exception.getMessage());
+    }
+
+    @Test
+    public void deleteUserActivities_UserNotFoundForId() {
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            userServiceClass.deleteUserActivities(1, 1);
         });
 
         assertEquals("user with id : 1 not found", exception.getMessage());
