@@ -37,7 +37,7 @@
 			**/com/Naveen/user_service/repository/**,
 			**/com/Naveen/user_service/utils/**,
 			**/com/Naveen/user_service/config/**,
-			**/com/Naveen/user_service/UserServiceApplication.java
+			**/com/Naveen/user_service/CustomerServiceApplication.java
 		</sonar.exclusions>
 	</properties>
 	<dependencies>

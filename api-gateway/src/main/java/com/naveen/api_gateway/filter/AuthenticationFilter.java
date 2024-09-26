@@ -1,5 +1,7 @@
 package com.naveen.api_gateway.filter;
 
+import com.naveen.api_gateway.exception.MissingAuthHeaderClass;
+import com.naveen.api_gateway.exception.UnAuthorizedUserClass;
 import com.naveen.api_gateway.util.JwtUtil;
 import jakarta.ws.rs.core.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,16 +30,16 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         return ((exchange, chain) -> {
             if (validator.isSecured.test(exchange.getRequest())) {
                 if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                    throw new RuntimeException("missing authorization header");
+                    throw new MissingAuthHeaderClass("Missing Auth Header Token");
                 }
                 String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    authHeader = authHeader.substring(7); // remove the Bearer and space
+                    authHeader = authHeader.substring(7);
                 }
                 try {
                   jwtUtil.validateToken(authHeader);
                 } catch (Exception e) {
-                    throw new RuntimeException("Unauthorized access to application");
+                    throw new UnAuthorizedUserClass("Unauthorized access to application");
                 }
             }
 

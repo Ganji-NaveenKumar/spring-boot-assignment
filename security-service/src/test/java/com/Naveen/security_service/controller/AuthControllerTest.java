@@ -1,6 +1,9 @@
 package com.Naveen.security_service.controller;
+
 import com.Naveen.security_service.dto.AuthRequest;
 import com.Naveen.security_service.entity.UserCredential;
+import com.Naveen.security_service.exception.InvalidTokenException;
+import com.Naveen.security_service.exception.InvalidUserDetails;
 import com.Naveen.security_service.exception.InvalidUserException;
 import com.Naveen.security_service.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,11 +14,16 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class AuthControllerTest {
+class AuthControllerTest {
 
     @InjectMocks
     private AuthController authController;
@@ -27,65 +35,128 @@ public class AuthControllerTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private Authentication authentication;
+    private BindingResult bindingResult;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testAddNewUser() {
+    void testAddNewUser_Success() {
         UserCredential userCredential = new UserCredential();
-        userCredential.setName("testUser");
-        userCredential.setPassword("testPass");
 
+        when(bindingResult.hasErrors()).thenReturn(false);
         when(authService.saveUser(userCredential)).thenReturn("User registered successfully");
 
-        String response = authController.addNewUser(userCredential);
+        String response = authController.addNewUser(userCredential, bindingResult);
         assertEquals("User registered successfully", response);
-        verify(authService, times(1)).saveUser(userCredential);
     }
 
     @Test
-    public void testGenerateUser_Success() {
-        AuthRequest authRequest = new AuthRequest();
-        authRequest.setUsername("testUser");
-        authRequest.setPassword("testPass");
+    void testAddNewUser_ValidationError() {
+        UserCredential userCredential = new UserCredential();
 
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authService.generateToken(authRequest.getUsername())).thenReturn("generatedToken");
+        when(bindingResult.hasErrors()).thenReturn(true);
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(
+                new FieldError("userCredential", "name", "Name is required"),
+                new FieldError("userCredential", "email", "Email format is invalid")
+        ));
+
+        InvalidUserDetails exception = assertThrows(InvalidUserDetails.class, () -> {
+            authController.addNewUser(userCredential, bindingResult);
+        });
+
+        assertTrue(exception.getMessage().contains("Validation errors:"));
+    }
+
+
+    @Test
+    void testGenerateUser_Success() {
+        AuthRequest authRequest = new AuthRequest("username", "password");
+        Authentication authentication = mock(Authentication.class);
+
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        when(authService.generateToken("username")).thenReturn("generatedToken");
 
         String token = authController.generateUser(authRequest);
         assertEquals("generatedToken", token);
-        verify(authService, times(1)).generateToken(authRequest.getUsername());
     }
 
     @Test
-    public void testGenerateUser_Unauthorized() {
-        AuthRequest authRequest = new AuthRequest();
-        authRequest.setUsername("testUser");
-        authRequest.setPassword("testPass");
+    void testGenerateUser_InvalidCredentials() {
+        AuthRequest authRequest = new AuthRequest("username", "wrongPassword");
 
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(false);
+        when(authenticationManager.authenticate(any())).thenThrow(new InvalidUserException("Invalid User Credentials"));
 
-        Exception exception = assertThrows(InvalidUserException.class, () -> {
+        InvalidUserException exception = assertThrows(InvalidUserException.class, () -> {
             authController.generateUser(authRequest);
         });
 
-        assertEquals("UnAuthorized User", exception.getMessage());
-        verify(authService, times(0)).generateToken(anyString());
+        assertEquals("Invalid User Credentials", exception.getMessage());
     }
 
     @Test
-    public void testValidateToken() {
+    void testValidateToken_Valid() {
         String token = "validToken";
+
         doNothing().when(authService).validateToken(token);
 
         String response = authController.validateToken(token);
         assertEquals("Valid User", response);
-        verify(authService, times(1)).validateToken(token);
     }
+
+    @Test
+    void testValidateToken_Invalid() {
+        String token = "invalidToken";
+
+        doThrow(new InvalidTokenException("Invalid Token")).when(authService).validateToken(token);
+
+        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () -> {
+            authController.validateToken(token);
+        });
+
+        assertEquals("Invalid Token", exception.getMessage());
+    }
+    @Test
+    void testAddNewUser_MissingField() {
+        UserCredential userCredential = new UserCredential();
+        when(bindingResult.hasErrors()).thenReturn(true);
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(
+                new FieldError("userCredential", "password", "Password is required")
+        ));
+
+        InvalidUserDetails exception = assertThrows(InvalidUserDetails.class, () -> {
+            authController.addNewUser(userCredential, bindingResult);
+        });
+
+        assertTrue(exception.getMessage().contains("Validation errors:"));
+    }
+
+    @Test
+    void testGenerateUser_InvalidAuthentication() {
+
+        AuthRequest authRequest = new AuthRequest("user", "wrongpassword");
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new AuthenticationException("Invalid credentials") {});
+
+        InvalidUserException exception = assertThrows(InvalidUserException.class, () -> {
+            authController.generateUser(authRequest);
+        });
+
+        assertEquals("Invalid User Credentials", exception.getMessage());
+    }
+    @Test
+    void testGenerateUser_UnexpectedException() {
+        AuthRequest authRequest = new AuthRequest("username", "password");
+        when(authenticationManager.authenticate(any())).thenThrow(new RuntimeException("Unexpected error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            authController.generateUser(authRequest);
+        });
+
+        assertEquals("Unexpected error", exception.getMessage());
+    }
+
 }

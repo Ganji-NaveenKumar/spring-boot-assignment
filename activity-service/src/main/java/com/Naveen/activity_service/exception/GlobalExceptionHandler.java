@@ -16,7 +16,14 @@ public class GlobalExceptionHandler {
         custom.setTimeStamp(System.currentTimeMillis());
         return new ResponseEntity<>(custom,HttpStatus.NOT_FOUND);
     }
-
+    @ExceptionHandler
+    public ResponseEntity<CustomExceptionClass> handleException(InvalidRequestException exc){
+        CustomExceptionClass custom=new CustomExceptionClass();
+        custom.setTimeStamp(System.currentTimeMillis());
+        custom.setMessage(exc.getMessage());
+        custom.setStatus(HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(custom,HttpStatus.BAD_REQUEST);
+    }
     @ExceptionHandler
     public ResponseEntity<CustomExceptionClass> handleException(Exception exc){
         CustomExceptionClass custom=new CustomExceptionClass();
